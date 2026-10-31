@@ -70,9 +70,13 @@
   /* ---------- the hat ---------- */
   #hat {
     background: none; border: 0; padding: 0; cursor: pointer;
-    width: min(78vw, 330px); max-width: 100%;
+    /* Sized by screen height too, so the hat, banner and button all fit on a phone without scrolling. */
+    width: min(78vw, 330px, 36vh); width: min(78vw, 330px, 36svh); max-width: 100%;
     border-radius: 24px;
+    transition: width 0.6s cubic-bezier(.3,.7,.3,1);
   }
+  body[data-phase="reveal"] #hat { width: min(50vw, 210px, 22vh); width: min(50vw, 210px, 22svh); }
+  body[data-phase="reveal"] #says { display: none; }
   #hat:focus-visible { outline: 2px solid var(--ember); outline-offset: 6px; }
   #hat svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 18px 24px rgba(0,0,0,0.55)); }
   #hatg { transform-origin: 150px 250px; transition: transform 0.6s cubic-bezier(.3,.7,.3,1); }
@@ -114,7 +118,7 @@
   /* ---------- the house banner ---------- */
   .banner {
     width: min(76vw, 290px);
-    padding: 22px 18px 52px;
+    padding: 16px 18px 40px;
     background:
       linear-gradient(180deg, rgba(255,255,255,0.08), transparent 30%),
       var(--house-1);
@@ -126,10 +130,10 @@
     filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
   }
   .banner .crest {
-    width: 54px; height: 54px; border-radius: 50%;
+    width: 44px; height: 44px; border-radius: 50%;
     display: grid; place-items: center;
     border: 2px solid var(--house-2); color: var(--house-2);
-    font-family: var(--display); font-size: 1.9rem; line-height: 1;
+    font-family: var(--display); font-size: 1.55rem; line-height: 1;
   }
   #house {
     font-family: var(--display); color: var(--house-2); margin: 0;
