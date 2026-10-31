@@ -3,156 +3,184 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#120f17">
+<meta name="theme-color" content="#100d14">
 <title>The Sorting Hat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&display=swap">
 <style>
-  /* Layout: one candlelit screen; a single big control in the middle, settings tucked below. */
+  /* Layout: one candlelit screen. The hat is the stage; captions and one control sit beneath it; settings tucked below. */
   :root {
-    --night: #120f17;
-    --night-2: #1d1823;
-    --parchment: #ecdfc3;
-    --dim: #9a8e78;
-    --candle: #e3a547;
-    --candle-glow: rgba(227, 165, 71, 0.35);
-    --house-1: #3a2f22;
-    --house-2: #e3a547;
+    --night: #100d14;
+    --night-2: #1c1722;
+    --parchment: #eadcbf;
+    --dim: #9b8f79;
+    --ember: #e8a64a;
+    --hat-hi: #6d5439;
+    --hat-lo: #2b2018;
+    --hat-line: #150e09;
+    --house-1: #3a2a1a;
+    --house-2: #e8a64a;
     --display: "IM Fell English SC", Georgia, "Times New Roman", serif;
     --body: "IM Fell English", Georgia, "Times New Roman", serif;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; }
   body {
-    background: var(--night);
-    background-image: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--house-1) 55%, transparent), transparent 70%);
+    background-color: var(--night);
     color: var(--parchment);
     font-family: var(--body);
     font-size: 18px;
     line-height: 1.45;
-    transition: background-color 1.2s ease;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
+  /* House-tinted glow sits on its own layer so it can fade between houses. */
+  .glow {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 38%, color-mix(in srgb, var(--house-1) 70%, transparent), transparent 72%),
+      radial-gradient(ellipse at 50% 120%, rgba(0,0,0,0.7), transparent 60%);
+    transition: opacity 1.2s ease;
+  }
+  #sky { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
   main {
+    position: relative; z-index: 2;
     min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-    padding-top: max(28px, env(safe-area-inset-top, 0px));
-    padding-bottom: max(28px, env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding-top: max(20px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     text-align: center;
   }
   h1 {
-    font-family: var(--display);
-    font-weight: 400;
-    font-size: 2rem;
-    letter-spacing: 0.04em;
-    margin: 0;
-    color: var(--candle);
-    text-wrap: balance;
+    font-family: var(--display); font-weight: 400;
+    font-size: 1.15rem; letter-spacing: 0.32em; text-indent: 0.32em;
+    margin: 0; color: var(--ember); opacity: 0.85;
   }
   .stage {
-    flex: 1;
-    width: 100%;
-    max-width: 30rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 22px;
+    flex: 1; width: 100%; max-width: 30rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
   }
-  .hint { color: var(--dim); margin: 0; font-style: italic; max-width: 22rem; }
 
-  #go {
-    width: min(68vw, 260px);
-    aspect-ratio: 1;
-    max-width: 100%;
-    border-radius: 50%;
-    border: 2px solid var(--candle);
-    background: radial-gradient(circle at 50% 40%, var(--night-2), var(--night));
-    color: var(--parchment);
-    font-family: var(--display);
-    font-size: 1.6rem;
-    line-height: 1.15;
-    padding: 24px;
-    cursor: pointer;
-    box-shadow: 0 0 40px var(--candle-glow), inset 0 0 30px rgba(0,0,0,0.6);
-    transition: transform 0.15s ease, box-shadow 0.3s ease, border-color 0.6s ease;
+  /* ---------- the hat ---------- */
+  #hat {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    width: min(78vw, 330px); max-width: 100%;
+    border-radius: 24px;
   }
-  #go:active { transform: scale(0.97); }
-  #go:focus-visible { outline: 3px solid var(--parchment); outline-offset: 6px; }
-  #go:disabled { cursor: default; }
-  body[data-phase="speaking"] #go,
-  body[data-phase="pondering"] #go { animation: breathe 2.2s ease-in-out infinite; }
-  body[data-phase="listening"] #go { animation: listen 1.1s ease-in-out infinite; border-color: var(--parchment); }
-  body[data-phase="reveal"] #go { border-color: var(--house-2); box-shadow: 0 0 70px color-mix(in srgb, var(--house-2) 60%, transparent); }
-  @keyframes breathe { 50% { box-shadow: 0 0 70px var(--candle-glow), inset 0 0 30px rgba(0,0,0,0.6); transform: scale(1.02); } }
-  @keyframes listen { 50% { box-shadow: 0 0 80px rgba(236, 223, 195, 0.35), inset 0 0 30px rgba(0,0,0,0.6); } }
+  #hat:focus-visible { outline: 2px solid var(--ember); outline-offset: 6px; }
+  #hat svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 18px 24px rgba(0,0,0,0.55)); }
+  #hatg { transform-origin: 150px 250px; transition: transform 0.6s cubic-bezier(.3,.7,.3,1); }
+  .eyes-open { display: none; }
+  .eye-glint { fill: var(--house-2); opacity: 0.55; transition: fill 1s ease; }
+  body:not([data-phase="idle"]) .eyes-open { display: inline; }
+  body:not([data-phase="idle"]) .eyes-closed { display: none; }
+  .eyes-open, .brows { transform-origin: 150px 148px; transition: transform 0.4s ease; }
 
+  body[data-phase="idle"] #hatg { animation: doze 4.5s ease-in-out infinite; }
+  body[data-phase="listening"] #hatg { transform: rotate(-4deg) translateY(4px); }
+  body[data-phase="listening"] .brows { transform: translateY(-5px); }
+  body[data-phase="pondering"] #hatg { animation: ponder 2.6s ease-in-out infinite; }
+  body[data-phase="pondering"] .eyes-open { transform: scaleY(0.45); }
+  body[data-phase="pondering"] .brows { transform: translateY(4px); }
+  body[data-phase="reveal"] #hatg { animation: shout 0.7s cubic-bezier(.2,.8,.2,1); }
+  body[data-phase="reveal"] .brows { transform: translateY(-7px); }
+  @keyframes doze { 50% { transform: rotate(1.5deg) translateY(3px) scaleY(0.985); } }
+  @keyframes ponder { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes shout { 40% { transform: scale(1.08) translateY(-10px); } }
+
+  /* ---------- captions ---------- */
   #says {
-    min-height: 3em;
-    margin: 0;
-    font-size: 1.25rem;
-    font-style: italic;
-    text-wrap: balance;
+    min-height: 2.9em; margin: 0; max-width: 24rem;
+    font-size: 1.3rem; font-style: italic; text-wrap: balance;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.8);
   }
-  #heard { min-height: 1.5em; margin: 0; color: var(--dim); }
-  #heard:not(:empty)::before { content: "Heard: "; font-style: italic; }
+  .listening {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--display); letter-spacing: 0.12em; color: var(--parchment);
+  }
+  .bars { display: flex; gap: 4px; align-items: center; height: 22px; }
+  .bars i { width: 4px; height: 100%; background: var(--ember); border-radius: 2px; animation: bar 0.9s ease-in-out infinite; }
+  .bars i:nth-child(2) { animation-delay: -0.2s; } .bars i:nth-child(3) { animation-delay: -0.45s; } .bars i:nth-child(4) { animation-delay: -0.65s; }
+  @keyframes bar { 0%,100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+  #heard { min-height: 1.5em; margin: 0; color: var(--dim); font-style: italic; max-width: 24rem; }
+  #heard:not(:empty)::before { content: "\201C"; } #heard:not(:empty)::after { content: "\201D"; }
 
+  /* ---------- the house banner ---------- */
+  .banner {
+    width: min(76vw, 290px);
+    padding: 22px 18px 52px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.08), transparent 30%),
+      var(--house-1);
+    box-shadow: inset 0 0 0 3px var(--house-2), inset 0 0 0 7px var(--house-1), inset 0 0 0 8px color-mix(in srgb, var(--house-2) 60%, transparent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+    display: grid; gap: 6px; justify-items: center;
+    transform-origin: top center;
+    animation: unfurl 1s cubic-bezier(.2,.8,.2,1);
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+  }
+  .banner .crest {
+    width: 54px; height: 54px; border-radius: 50%;
+    display: grid; place-items: center;
+    border: 2px solid var(--house-2); color: var(--house-2);
+    font-family: var(--display); font-size: 1.9rem; line-height: 1;
+  }
   #house {
-    font-family: var(--display);
-    font-size: clamp(2.6rem, 13vw, 4.4rem);
-    line-height: 1;
-    margin: 0;
-    color: var(--house-2);
-    text-shadow: 0 0 30px color-mix(in srgb, var(--house-2) 50%, transparent);
-    animation: rise 0.9s cubic-bezier(.2,.8,.2,1);
+    font-family: var(--display); color: var(--house-2); margin: 0;
+    font-size: clamp(2.1rem, 10vw, 2.8rem); line-height: 1;
+    text-shadow: 0 0 24px color-mix(in srgb, var(--house-2) 45%, transparent);
   }
-  @keyframes rise { from { opacity: 0; transform: scale(0.6) translateY(20px); } }
+  #traits { margin: 0; font-size: 0.85rem; letter-spacing: 0.08em; color: var(--parchment); opacity: 0.85; }
+  @keyframes unfurl {
+    from { transform: scaleY(0.05); opacity: 0; }
+    60%  { opacity: 1; }
+    to   { transform: none; opacity: 1; }
+  }
 
+  /* ---------- controls ---------- */
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 52px; }
   .btn {
-    font: inherit;
-    font-size: 1rem;
-    color: var(--parchment);
-    background: var(--night-2);
-    border: 1px solid var(--dim);
-    border-radius: 999px;
-    padding: 10px 22px;
-    cursor: pointer;
+    font: inherit; font-size: 1rem; color: var(--parchment);
+    background: var(--night-2); border: 1px solid var(--dim); border-radius: 999px;
+    padding: 10px 22px; cursor: pointer;
   }
-  .btn:focus-visible { outline: 2px solid var(--candle); outline-offset: 3px; }
+  .btn.primary {
+    font-family: var(--display); font-size: 1.25rem; letter-spacing: 0.06em;
+    padding: 12px 30px; border-color: var(--ember);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ember) 22%, var(--night-2)), var(--night-2));
+    box-shadow: 0 0 28px color-mix(in srgb, var(--ember) 30%, transparent);
+  }
+  .btn:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
+  .btn:active { transform: scale(0.97); }
 
+  /* ---------- settings ---------- */
   details {
-    width: 100%;
-    max-width: 30rem;
-    text-align: left;
-    color: var(--dim);
-    font-size: 0.95rem;
+    width: 100%; max-width: 30rem; text-align: left; color: var(--dim); font-size: 0.95rem;
+    border-top: 1px solid color-mix(in srgb, var(--dim) 30%, transparent); padding-top: 10px;
   }
-  summary { cursor: pointer; text-align: center; letter-spacing: 0.06em; font-family: var(--display); }
-  .settings { display: grid; gap: 14px; padding-top: 14px; }
-  .settings label { display: grid; gap: 4px; }
+  summary { cursor: pointer; text-align: center; letter-spacing: 0.18em; font-family: var(--display); font-size: 0.9rem; }
+  .settings { display: grid; gap: 16px; padding-top: 16px; }
+  .settings label { display: grid; gap: 6px; }
+  .settings h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 0.95rem; letter-spacing: 0.1em; color: var(--parchment); }
+  input[type="range"] { width: 100%; accent-color: var(--ember); }
   select {
-    font: inherit;
-    font-size: 16px;
-    color: var(--parchment);
-    background: var(--night-2);
-    border: 1px solid var(--dim);
-    border-radius: 8px;
-    padding: 8px;
-    width: 100%;
+    font: inherit; font-size: 16px; color: var(--parchment);
+    background: var(--night-2); border: 1px solid var(--dim); border-radius: 8px; padding: 8px; width: 100%;
   }
   .tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; font-variant-numeric: tabular-nums; }
-  .tally div { display: grid; gap: 2px; }
-  .tally b { font-size: 1.3rem; color: var(--parchment); font-weight: 400; }
-  .tally span { font-size: 0.72rem; letter-spacing: 0.04em; }
+  .tally div { display: grid; gap: 2px; padding: 8px 2px; border-radius: 8px; background: var(--night-2); }
+  .tally b { font-size: 1.4rem; color: var(--parchment); font-weight: 400; }
+  .tally span { font-size: 0.7rem; letter-spacing: 0.03em; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .note { font-style: italic; margin: 0; }
+  #why { margin: 0; color: var(--parchment); min-width: 0; overflow-wrap: anywhere; }
+  #why small { color: var(--dim); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -160,31 +188,93 @@
 </style>
 </head>
 <body data-phase="idle">
+<div class="glow"></div>
+<canvas id="sky"></canvas>
 <main>
   <h1>The Sorting Hat</h1>
 
   <section class="stage" aria-live="polite">
-    <p class="hint" id="hint">Place the hat on the student's head, then tap.</p>
-    <button id="go" type="button">Begin the Sorting</button>
-    <p id="says"></p>
-    <p id="house" hidden></p>
+    <button id="hat" type="button" aria-label="Begin the sorting">
+      <svg viewBox="0 0 300 280" role="img" aria-hidden="true">
+        <defs>
+          <linearGradient id="cloth" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style="stop-color: var(--hat-hi)"/>
+            <stop offset="1" style="stop-color: var(--hat-lo)"/>
+          </linearGradient>
+          <linearGradient id="brim" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" style="stop-color: var(--hat-hi)"/>
+            <stop offset="1" style="stop-color: var(--hat-line)"/>
+          </linearGradient>
+        </defs>
+        <g id="hatg">
+          <ellipse cx="150" cy="238" rx="134" ry="26" fill="url(#brim)"/>
+          <path fill="url(#cloth)" stroke="var(--hat-line)" stroke-width="2"
+                d="M60,234 C70,180 95,120 120,85 C135,60 150,35 175,30 C195,26 215,40 230,60 C214,52 198,50 186,58 C175,68 178,95 185,130 C195,175 215,205 242,234 Z"/>
+          <!-- wrinkles and a stitched patch -->
+          <g fill="none" stroke="var(--hat-line)" stroke-width="2.4" stroke-linecap="round" opacity="0.75">
+            <path d="M100,112 Q126,122 152,108"/>
+            <path d="M138,76 Q158,84 177,72"/>
+            <path d="M82,214 Q104,222 124,212"/>
+            <path d="M176,214 Q198,222 222,212"/>
+            <path d="M195,48 Q205,56 214,52"/>
+          </g>
+          <path d="M150,84 l22,-4 l4,20 l-22,5 Z" fill="var(--hat-lo)" stroke="var(--hat-line)" stroke-width="1.5"/>
+          <path d="M152,87 l18,-3.4 l3.2,16 l-18,4 Z" fill="none" stroke="var(--dim)" stroke-width="1" stroke-dasharray="2.5 2.5" opacity="0.6"/>
+          <!-- face -->
+          <g class="brows" fill="none" stroke="var(--hat-line)" stroke-width="4" stroke-linecap="round">
+            <path d="M104,136 Q122,124 142,134"/>
+            <path d="M156,134 Q174,124 192,136"/>
+          </g>
+          <g class="eyes-closed" fill="none" stroke="var(--hat-line)" stroke-width="3.5" stroke-linecap="round">
+            <path d="M110,150 Q125,159 140,150"/>
+            <path d="M158,150 Q172,159 187,150"/>
+          </g>
+          <g class="eyes-open">
+            <path d="M109,152 Q124,137 141,150 Q125,160 109,152 Z" fill="var(--hat-line)"/>
+            <path d="M157,150 Q172,137 188,152 Q171,160 157,150 Z" fill="var(--hat-line)"/>
+            <ellipse class="eye-glint" cx="126" cy="150" rx="5" ry="3.2"/>
+            <ellipse class="eye-glint" cx="172" cy="150" rx="5" ry="3.2"/>
+          </g>
+          <path id="mouth" fill="var(--hat-line)" stroke="var(--hat-line)" stroke-width="3" stroke-linejoin="round"
+                d="M98,196 Q150,200 200,192 Q150,202 98,196 Z"/>
+        </g>
+      </svg>
+    </button>
+
+    <div class="banner" id="banner" hidden>
+      <div class="crest" id="crest"></div>
+      <p id="house"></p>
+      <p id="traits"></p>
+    </div>
+
+    <p id="says">Place the hat on a student's head, then tap.</p>
+    <div class="listening" id="listening" hidden><span class="bars"><i></i><i></i><i></i><i></i></span>Listening</div>
     <p id="heard"></p>
-    <button id="done" class="btn" type="button" hidden>They've answered</button>
+
+    <div class="actions">
+      <button id="go" class="btn primary" type="button">Begin the Sorting</button>
+      <button id="done" class="btn" type="button" hidden>They've answered</button>
+    </div>
   </section>
 
   <details>
     <summary>Hat settings</summary>
     <div class="settings">
-      <label for="voice">Hat's voice
-        <select id="voice"></select>
+      <label for="depth">Voice depth
+        <input id="depth" type="range" min="0.7" max="1" step="0.02" value="0.84">
+      </label>
+      <label for="echo">Great Hall echo
+        <input id="echo" type="range" min="0" max="0.9" step="0.05" value="0.35">
       </label>
       <div class="row">
         <button id="test" class="btn" type="button">Test voice</button>
         <button id="testmic" class="btn" type="button">Test microphone</button>
       </div>
+      <p class="note" id="support"></p>
+
       <label for="force">Next student's house
         <select id="force">
-          <option value="">Let the hat decide</option>
+          <option value="">Let the hat decide from the answer</option>
           <option value="gryffindor">Gryffindor</option>
           <option value="hufflepuff">Hufflepuff</option>
           <option value="ravenclaw">Ravenclaw</option>
@@ -192,136 +282,156 @@
         </select>
       </label>
       <p class="note">A chosen house applies to the next sorting only, then resets.</p>
-      <div>
-        <p class="note" style="margin-bottom:8px">Sorted so far</p>
+
+      <div class="row" style="display:grid;gap:6px">
+        <h3>Last sorting</h3>
+        <p id="why"><small>Nobody sorted yet.</small></p>
+      </div>
+
+      <div style="display:grid;gap:8px">
+        <h3>Sorted so far</h3>
         <div class="tally" id="tally"></div>
       </div>
-      <div class="row"><button id="reset" class="btn" type="button">Reset count</button></div>
-      <p class="note" id="support"></p>
+      <div class="row">
+        <button id="reset" class="btn" type="button">Reset count</button>
+        <button id="reshuffle" class="btn" type="button">Reshuffle questions</button>
+      </div>
     </div>
   </details>
 </main>
 
 <script>
 (() => {
-  const HOUSES = {
-    gryffindor: {
-      name: "Gryffindor", c1: "#7a1a17", c2: "#f0b43a",
-      lines: ["Plenty of courage, I see.", "A daring heart. No doubt about it.", "Bold. Very bold indeed."],
-      keys: ["brave", "courage", "bold", "fight", "adventur", "explor", "open", "jump", "climb", "dragon", "lion", "sword", "hero", "rescue", "save", "dare", "fearless", "fly", "flying", "fire", "red", "strong", "fast", "race", "run", "danger", "quidditch", "broom", "battle", "knight", "protect"]
-    },
-    hufflepuff: {
-      name: "Hufflepuff", c1: "#6b5410", c2: "#f5d23d",
-      lines: ["A kind and loyal heart.", "You'd never leave a friend behind, would you?", "Hard working, and true."],
-      keys: ["kind", "nice", "friend", "help", "loyal", "fair", "share", "hug", "badger", "garden", "plant", "flower", "cook", "bake", "cake", "cookie", "food", "animal", "pet", "dog", "cat", "puppy", "family", "together", "care", "happy", "yellow", "honest", "everyone", "love", "heal", "team"]
-    },
-    ravenclaw: {
-      name: "Ravenclaw", c1: "#14305e", c2: "#c9965a",
-      lines: ["Oh, there's a clever mind in here.", "Such curiosity. Such wit.", "A thirst to learn, I see."],
-      keys: ["clever", "smart", "read", "book", "learn", "study", "think", "wise", "puzzle", "eagle", "raven", "bird", "owl", "science", "math", "invent", "question", "curious", "library", "know", "blue", "idea", "figure", "explain", "school", "teacher", "spell", "potion", "brain", "draw", "art", "build", "discover", "secret passage"]
-    },
-    slytherin: {
-      name: "Slytherin", c1: "#0f4a2a", c2: "#c8ccd2",
-      lines: ["Plenty of ambition, oh yes.", "You'd do well to be great.", "A cunning one, aren't you?"],
-      keys: ["power", "win", "winner", "lead", "leader", "rule", "rich", "money", "gold", "ambitio", "best", "famous", "cunning", "sneak", "secret", "snake", "serpent", "green", "king", "queen", "boss", "control", "invisib", "trick", "first", "great", "treasure", "champion", "mine", "keep it", "dark"]
-    }
-  };
-  const ORDER = ["gryffindor", "hufflepuff", "ravenclaw", "slytherin"];
-
-  const QUESTIONS = [
-    "Hmm. Another head to sort. Tell me, would you rather be brave, clever, kind, or powerful?",
-    "Ah, let me see. If you found a secret door in the castle, what would you do?",
-    "Interesting. Which would you choose as a pet: a lion, an eagle, a badger, or a snake?",
-    "Hmm. If you could have any magical power at all, what would it be?",
-    "Tell me, young one. What do you love to do more than anything else?",
-    "Now then. What do you want people to remember you for?",
-    "Let me think. Which would you take on a quest: a sword, a book, a friend, or a treasure map?"
-  ];
-  const PONDER = [
-    "Hmm. Difficult. Very difficult.",
-    "Oh, I see. Yes, I see quite a lot in here.",
-    "Interesting. Very interesting.",
-    "Not a bad mind. Not bad at all."
-  ];
-  const LEAD_IN = ["Better be", "I know just where to put you.", "It had better be", "You belong in"];
-
   const $ = (id) => document.getElementById(id);
-  const go = $("go"), says = $("says"), heard = $("heard"), houseEl = $("house"), hint = $("hint"), doneBtn = $("done");
-  const voiceSel = $("voice"), forceSel = $("force");
+  const ORDER = ["gryffindor", "hufflepuff", "ravenclaw", "slytherin"];
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
 
-  // ---- tally (per-device convenience) ----
-  let tally = { gryffindor: 0, hufflepuff: 0, ravenclaw: 0, slytherin: 0 };
-  try { Object.assign(tally, JSON.parse(localStorage.getItem("hat-tally") || "{}")); } catch (e) {}
-  function saveTally() { try { localStorage.setItem("hat-tally", JSON.stringify(tally)); } catch (e) {} renderTally(); }
-  function renderTally() {
-    $("tally").innerHTML = ORDER.map((h) => `<div><b>${tally[h] || 0}</b><span>${HOUSES[h].name}</span></div>`).join("");
-  }
-  renderTally();
+  let L = null;          // lines.json
+  const TEXT = {};       // audio id -> caption
+  const strip = (t) => t.replace(/\[\[[^\]]*\]\]/g, " ").replace(/\s+/g, " ").replace(/\s+([.,!?])/g, "$1").trim();
 
-  // ---- voice ----
-  let voices = [];
-  let voice = null;
-  function loadVoices() {
-    voices = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.startsWith("en"));
-    if (!voices.length) return;
-    let saved = null;
-    try { saved = localStorage.getItem("hat-voice"); } catch (e) {}
-    const preferred = ["Daniel", "Arthur", "Oliver", "Google UK English Male", "Fred", "Rocko", "Grandpa", "Gordon", "Aaron"];
-    voice = voices.find((v) => v.name === saved)
-      || preferred.map((n) => voices.find((v) => v.name.startsWith(n))).find(Boolean)
-      || voices.find((v) => v.lang === "en-GB")
-      || voices[0];
-    voiceSel.innerHTML = voices.map((v, i) => `<option value="${i}">${v.name} (${v.lang})</option>`).join("");
-    voiceSel.value = String(voices.indexOf(voice));
+  // Must match audio_ids() in build_audio.py.
+  function audioIds(d) {
+    d.questions.forEach((t, i) => TEXT["q" + String(i + 1).padStart(2, "0")] = t);
+    d.ponder.forEach((t, i) => TEXT["ponder" + (i + 1)] = t);
+    d.leadIns.forEach((t, i) => TEXT["lead" + (i + 1)] = t);
+    TEXT.test = d.test;
+    for (const [key, h] of Object.entries(d.houses)) {
+      TEXT["house-" + key] = h.name + "!";
+      h.lines.forEach((t, i) => TEXT[key + (i + 1)] = t);
+      h.keys.forEach((k) => TEXT["clue-" + k.replace(/ /g, "-")] = `Ah. ${k[0].toUpperCase() + k.slice(1)}. I see.`);
+    }
+    for (const k in TEXT) TEXT[k] = strip(TEXT[k]);
   }
-  if ("speechSynthesis" in window) {
-    loadVoices();
-    speechSynthesis.addEventListener?.("voiceschanged", loadVoices);
-  }
-  voiceSel.addEventListener("change", () => {
-    voice = voices[+voiceSel.value] || null;
-    try { localStorage.setItem("hat-voice", voice ? voice.name : ""); } catch (e) {}
-  });
 
-  function speak(text, { rate = 0.85, pitch = 0.55, volume = 1 } = {}) {
-    says.textContent = text;
+  // ---------- audio engine ----------
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ctx = AC ? new AC() : null;
+  let fx = null;
+  const settings = { depth: store.get("hat-depth", 0.84), echo: store.get("hat-echo", 0.35) };
+  $("depth").value = settings.depth; $("echo").value = settings.echo;
+
+  function impulse(seconds, decay) {
+    const len = Math.floor(ctx.sampleRate * seconds);
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    return buf;
+  }
+  function buildFx() {
+    const warm = ctx.createBiquadFilter(); warm.type = "lowshelf"; warm.frequency.value = 220; warm.gain.value = 6;
+    const soft = ctx.createBiquadFilter(); soft.type = "lowpass"; soft.frequency.value = 5200;
+    const dry = ctx.createGain(), wet = ctx.createGain(), hall = ctx.createConvolver(), out = ctx.createGain();
+    hall.buffer = impulse(2.6, 3);
+    warm.connect(soft); soft.connect(dry); soft.connect(hall); hall.connect(wet);
+    dry.connect(out); wet.connect(out);
+    const analyser = ctx.createAnalyser(); analyser.fftSize = 512;
+    out.connect(analyser); out.connect(ctx.destination);
+    wet.gain.value = settings.echo; out.gain.value = 1.1;
+    return { input: warm, wet, analyser };
+  }
+  if (ctx) fx = buildFx();
+
+  const cache = new Map();
+  function load(id) {
+    if (!ctx) return Promise.resolve(null);
+    if (!cache.has(id)) {
+      cache.set(id, fetch(`audio/${id}.m4a`)
+        .then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+        .then((b) => new Promise((res, rej) => ctx.decodeAudioData(b, res, rej)))
+        .catch(() => { cache.delete(id); return null; }));
+    }
+    return cache.get(id);
+  }
+  async function wake() {
+    if (ctx && ctx.state !== "running") { try { await Promise.race([ctx.resume(), wait(500)]); } catch (e) {} }
+  }
+
+  let talking = false; // drives the mouth when the fallback voice is used
+  async function say(id, caption) {
+    const text = caption ?? TEXT[id] ?? "";
+    $("says").textContent = text;
+    const buf = await load(id);
+    if (!buf) return speakFallback(text);
+    await wake();
     return new Promise((resolve) => {
-      if (!("speechSynthesis" in window)) { setTimeout(resolve, 1200 + text.length * 60); return; }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = settings.depth;
+      src.connect(fx.input);
+      let done = false;
+      const finish = () => { if (done) return; done = true; resolve(); };
+      src.onended = finish;
+      setTimeout(finish, (buf.duration / settings.depth) * 1000 + 800);
+      src.start();
+    });
+  }
+
+  // Built-in speech, only if an audio file can't be loaded.
+  function speakFallback(text) {
+    return new Promise((resolve) => {
+      if (!("speechSynthesis" in window) || !text) { setTimeout(resolve, 600 + text.length * 60); return; }
+      speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      if (voice) { u.voice = voice; u.lang = voice.lang; } else { u.lang = "en-GB"; }
-      u.rate = rate; u.pitch = pitch; u.volume = volume;
-      let finished = false;
-      // iOS sometimes never fires onend; fall back to an estimate.
-      const timer = setTimeout(() => finish(), 2500 + text.length * 110);
-      function finish() { if (finished) return; finished = true; clearTimeout(timer); resolve(); }
-      u.onend = finish;
-      u.onerror = finish;
+      const v = speechSynthesis.getVoices().find((x) => x.name.startsWith("Daniel")) || speechSynthesis.getVoices().find((x) => x.lang === "en-GB");
+      if (v) u.voice = v;
+      u.lang = v ? v.lang : "en-GB"; u.rate = 0.85; u.pitch = 0.55;
+      let done = false;
+      const finish = () => { if (done) return; done = true; talking = false; clearTimeout(t); resolve(); };
+      const t = setTimeout(finish, 2500 + text.length * 110);
+      u.onend = finish; u.onerror = finish;
+      talking = true;
       speechSynthesis.speak(u);
     });
   }
 
-  // ---- fanfare ----
-  let audio = null;
   function fanfare() {
-    if (!audio) return;
-    const now = audio.currentTime;
-    [[0, 392], [0.16, 523.25], [0.32, 659.25], [0.48, 783.99], [0.48, 523.25], [0.48, 659.25]].forEach(([t, f]) => {
-      const o = audio.createOscillator(), g = audio.createGain();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    [[0, 392], [0.16, 523.25], [0.32, 659.25], [0.5, 783.99], [0.5, 523.25], [0.5, 659.25], [0.5, 392]].forEach(([t, f]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "triangle"; o.frequency.value = f;
       g.gain.setValueAtTime(0.0001, now + t);
-      g.gain.exponentialRampToValueAtTime(0.25, now + t + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + t + (t >= 0.48 ? 1.4 : 0.3));
-      o.connect(g).connect(audio.destination);
-      o.start(now + t); o.stop(now + t + 1.5);
+      g.gain.exponentialRampToValueAtTime(0.22, now + t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + t + (t >= 0.5 ? 1.6 : 0.3));
+      o.connect(g).connect(ctx.destination);
+      o.start(now + t); o.stop(now + t + 1.7);
     });
   }
 
-  // ---- listening ----
-  function listen(maxMs = 9000) {
-    heard.textContent = "";
+  // ---------- listening ----------
+  let lastAnswer = "";
+  function listen(maxMs = 10000) {
+    $("heard").textContent = "";
     return new Promise((resolve) => {
       let text = "", finished = false, rec = null, silence = null;
       const hardStop = setTimeout(finish, maxMs);
@@ -329,12 +439,12 @@
         if (finished) return;
         finished = true;
         clearTimeout(hardStop); clearTimeout(silence);
-        doneBtn.hidden = true; doneBtn.onclick = null;
-        try { rec && rec.stop(); } catch (e) {}
+        $("done").hidden = true; $("done").onclick = null;
+        try { rec && rec.abort(); } catch (e) {}
         resolve(text.trim());
       }
-      doneBtn.hidden = false;
-      doneBtn.onclick = finish;
+      $("done").hidden = false;
+      $("done").onclick = finish;
       if (!SR) return; // no recognition: wait for the tap or the timer
       rec = new SR();
       rec.lang = "en-US";
@@ -342,7 +452,7 @@
       rec.continuous = true;
       rec.onresult = (e) => {
         text = Array.from(e.results).map((r) => r[0].transcript).join(" ");
-        heard.textContent = text;
+        $("heard").textContent = text;
         clearTimeout(silence);
         silence = setTimeout(finish, 1800); // they've stopped talking
       };
@@ -352,119 +462,307 @@
     });
   }
 
-  // ---- deciding ----
-  function decide(answer) {
-    const words = (answer.toLowerCase().match(/[a-z']+/g) || []);
-    const joined = " " + words.join(" ") + " ";
-    const scores = {}, matched = {};
-    for (const h of ORDER) {
-      scores[h] = 0;
-      for (const k of HOUSES[h].keys) {
-        const hit = k.includes(" ")
-          ? joined.includes(" " + k)
-          : words.find((w) => w === k || (k.length >= 4 && w.startsWith(k)));
-        if (hit) { scores[h]++; matched[h] = matched[h] || (typeof hit === "string" ? hit : k); }
-      }
-    }
-    const best = Math.max(...ORDER.map((h) => scores[h]));
-    let pool;
-    if (best > 0) {
-      pool = ORDER.filter((h) => scores[h] === best);
-    } else {
-      // No clues: favour the houses with the fewest students so far.
-      const fewest = Math.min(...ORDER.map((h) => tally[h] || 0));
-      pool = ORDER.filter((h) => (tally[h] || 0) === fewest);
-    }
-    const house = pick(pool);
-    return { house, clue: best > 0 ? matched[house] : null };
+  // ---------- deciding from the answer ----------
+  const NEGATORS = new Set(["not", "don't", "dont", "never", "no", "isn't", "wouldn't", "won't", "can't"]);
+  const stem = (w) => (w.length >= 4 ? w.replace(/(ings?|ers?|ed|es|s)$/, "").replace(/e$/, "") : w);
+  let KEYSTEMS = null;
+  function keyIndex() {
+    KEYSTEMS = new Map();
+    for (const h of ORDER) for (const k of L.houses[h].keys) KEYSTEMS.set(stem(k), { house: h, key: k });
   }
 
-  // ---- the ceremony ----
-  function setPhase(p) { document.body.dataset.phase = p; }
-  function setHouseColors(h) {
+  // Clue words the hat itself said in the question don't count, unless they were one of the
+  // offered choices (the "a, b, c, or d" part). Otherwise "the dragon egg" would always mean Gryffindor.
+  function echoStems(qid) {
+    const q = strip(TEXT[qid] || "").toLowerCase();
+    const choices = q.split(/[.?!]/).filter((s) => s.includes(" or ")).join(" ");
+    const ignore = new Set();
+    for (const w of q.match(/[a-z']+/g) || []) {
+      if (KEYSTEMS.has(stem(w)) && !new RegExp("\\b" + w + "\\b").test(choices)) ignore.add(stem(w));
+    }
+    return ignore;
+  }
+
+  function decide(answer, qid) {
+    const ignore = qid ? echoStems(qid) : new Set();
+    const scores = { gryffindor: 0, hufflepuff: 0, ravenclaw: 0, slytherin: 0 };
+    const reasons = { gryffindor: [], hufflepuff: [], ravenclaw: [], slytherin: [] };
+    const clues = { gryffindor: null, hufflepuff: null, ravenclaw: null, slytherin: null };
+    let text = " " + answer.toLowerCase().replace(/[^a-z' ]+/g, " ").replace(/\s+/g, " ") + " ";
+    text = text.replace(/ (kind|sort) of /g, " ");
+
+    // Phrases first (worth 2), longest first, removing each so shorter ones don't double count.
+    const phrases = ORDER.flatMap((h) => (L.houses[h].phrases || []).map((p) => ({ h, p })))
+      .sort((a, b) => b.p.length - a.p.length);
+    for (const { h, p } of phrases) {
+      const needle = " " + p + " ";
+      const at = text.indexOf(needle);
+      if (at === -1) continue;
+      const before = text.slice(0, at).trim().split(" ").slice(-2);
+      if (!/^(not|don't|dont|never|no) /.test(p) && before.some((w) => NEGATORS.has(w))) continue;
+      scores[h] += 2; reasons[h].push(`"${p}"`);
+      text = text.slice(0, at) + " | " + text.slice(at + needle.length - 1);
+    }
+
+    // Single words (worth 1), skipping ones just after "not", "never" and so on.
+    const words = text.split(" ").filter(Boolean);
+    words.forEach((w, i) => {
+      if (w === "|" || ignore.has(stem(w))) return;
+      const hit = KEYSTEMS.get(stem(w)) || KEYSTEMS.get(w);
+      if (!hit) return;
+      if (NEGATORS.has(words[i - 1]) || NEGATORS.has(words[i - 2])) return;
+      scores[hit.house] += 1; reasons[hit.house].push(hit.key);
+      clues[hit.house] = clues[hit.house] || hit.key;
+    });
+
+    // How they answered (worth half a point): only matters when the words alone don't settle it.
+    const all = answer.toLowerCase().match(/[a-z']+/g) || [];
+    if (all.length) {
+      const count = (list) => all.filter((w) => list.includes(w)).length;
+      if (all.length <= 3) { scores.gryffindor += 0.5; reasons.gryffindor.push("a quick, bold answer"); }
+      if (all.length >= 12) { scores.ravenclaw += 0.5; reasons.ravenclaw.push("a thoughtful, long answer"); }
+      if (count(["why", "how", "maybe", "probably", "because", "think", "wonder"]) >= 1) { scores.ravenclaw += 0.5; reasons.ravenclaw.push("thinking it through"); }
+      if (count(["we", "us", "our", "everybody", "everyone", "friends", "together"]) >= 1) { scores.hufflepuff += 0.5; reasons.hufflepuff.push("thinking of others"); }
+      if (count(["i", "me", "my", "mine", "myself", "i'd", "i'll", "i'm"]) >= 3) { scores.slytherin += 0.5; reasons.slytherin.push("thinking of themselves"); }
+    }
+
+    const best = Math.max(...ORDER.map((h) => scores[h]));
+    let pool, how;
+    if (best > 0) {
+      pool = ORDER.filter((h) => scores[h] === best);
+      how = pool.length > 1 ? "a tie, so the house with fewer students won" : "the answer";
+    } else {
+      pool = ORDER.slice();
+      how = answer ? "no clues in the answer, so the house with fewer students won" : "nothing was heard, so the house with fewer students won";
+    }
+    // Ties go to the house with the fewest students so far.
+    const fewest = Math.min(...pool.map((h) => tally[h] || 0));
+    const house = pick(pool.filter((h) => (tally[h] || 0) === fewest));
+    return { house, clue: clues[house], scores, reasons: reasons[house], how };
+  }
+
+  // ---------- question deck: every question once before any repeats ----------
+  function nextQuestion() {
+    const n = L.questions.length;
+    let deck = store.get("hat-deck", []).filter((i) => Number.isInteger(i) && i < n);
+    if (!deck.length) {
+      deck = [...Array(n).keys()];
+      for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+      const last = store.get("hat-last-q", -1);
+      if (deck[0] === last && n > 1) [deck[0], deck[1]] = [deck[1], deck[0]];
+    }
+    const q = deck.shift();
+    store.set("hat-deck", deck); store.set("hat-last-q", q);
+    return "q" + String(q + 1).padStart(2, "0");
+  }
+
+  // ---------- tally ----------
+  let tally = Object.assign({ gryffindor: 0, hufflepuff: 0, ravenclaw: 0, slytherin: 0 }, store.get("hat-tally", {}));
+  function renderTally() {
+    $("tally").innerHTML = ORDER.map((h) => `<div><b>${tally[h] || 0}</b><span>${h[0].toUpperCase() + h.slice(1)}</span></div>`).join("");
+  }
+  renderTally();
+
+  // ---------- sky: drifting embers, and sparks on a reveal ----------
+  const sky = $("sky"), g2 = sky.getContext("2d");
+  let W = 0, H = 0, DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    sky.width = W * DPR; sky.height = H * DPR;
+    g2.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  resize(); addEventListener("resize", resize);
+  let emberColor = [232, 166, 74];
+  const embers = Array.from({ length: reduceMotion ? 0 : 38 }, () => newEmber(true));
+  function newEmber(anywhere) {
+    return { x: Math.random() * W, y: anywhere ? Math.random() * H : H + 10, r: 0.8 + Math.random() * 2.2,
+             vy: 0.15 + Math.random() * 0.45, sway: Math.random() * Math.PI * 2, a: 0.25 + Math.random() * 0.55 };
+  }
+  let sparks = [];
+  function burst(cx, cy, colors) {
+    if (reduceMotion) return;
+    for (let i = 0; i < 140; i++) {
+      const ang = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 7;
+      sparks.push({ x: cx, y: cy, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 3, life: 1, r: 1.5 + Math.random() * 2.5, c: pick(colors) });
+    }
+  }
+
+  const mouth = $("mouth");
+  let mouthOpen = 0;
+  const td = new Uint8Array(256);
+  function frame(t) {
+    // Mouth follows the hat's voice.
+    let level = 0;
+    if (fx) {
+      fx.analyser.getByteTimeDomainData(td);
+      let sum = 0;
+      for (let i = 0; i < td.length; i++) { const v = (td[i] - 128) / 128; sum += v * v; }
+      level = Math.min(1, Math.sqrt(sum / td.length) * 5);
+    }
+    if (talking) level = Math.max(level, 0.25 + 0.35 * Math.abs(Math.sin(t / 90)) * Math.random());
+    mouthOpen += (level - mouthOpen) * 0.35;
+    const o = mouthOpen;
+    mouth.setAttribute("d", `M98,196 Q150,${200 - o * 8} 200,192 Q150,${202 + o * 46} 98,196 Z`);
+
+    g2.clearRect(0, 0, W, H);
+    const [r, g, b] = emberColor;
+    for (const e of embers) {
+      e.y -= e.vy; e.sway += 0.01; e.x += Math.sin(e.sway) * 0.25;
+      if (e.y < -10) Object.assign(e, newEmber(false));
+      const flicker = e.a * (0.75 + 0.25 * Math.sin(t / 200 + e.sway * 10));
+      g2.beginPath(); g2.fillStyle = `rgba(${r},${g},${b},${flicker})`;
+      g2.shadowColor = `rgba(${r},${g},${b},0.9)`; g2.shadowBlur = 8;
+      g2.arc(e.x, e.y, e.r, 0, Math.PI * 2); g2.fill();
+    }
+    g2.shadowBlur = 0;
+    sparks = sparks.filter((s) => s.life > 0);
+    for (const s of sparks) {
+      s.x += s.vx; s.y += s.vy; s.vy += 0.12; s.vx *= 0.985; s.life -= 0.011;
+      g2.globalAlpha = Math.max(0, s.life);
+      g2.fillStyle = s.c;
+      g2.beginPath(); g2.arc(s.x, s.y, s.r, 0, Math.PI * 2); g2.fill();
+    }
+    g2.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---------- the ceremony ----------
+  const setPhase = (p) => { document.body.dataset.phase = p; };
+  function setHouse(h) {
     const root = document.documentElement.style;
-    if (!h) { root.removeProperty("--house-1"); root.removeProperty("--house-2"); return; }
-    root.setProperty("--house-1", HOUSES[h].c1);
-    root.setProperty("--house-2", HOUSES[h].c2);
+    if (!h) {
+      root.removeProperty("--house-1"); root.removeProperty("--house-2");
+      emberColor = [232, 166, 74];
+      return;
+    }
+    root.setProperty("--house-1", L.houses[h].c1);
+    root.setProperty("--house-2", L.houses[h].c2);
+    const hex = L.houses[h].c2.replace("#", "");
+    emberColor = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
   }
 
   let running = false;
   async function sort() {
-    if (running) return;
+    if (running || !L) return;
     running = true;
-    go.disabled = true;
-    hint.hidden = true;
-    houseEl.hidden = true;
-    heard.textContent = "";
-    setHouseColors(null);
-
-    // Keep the screen awake for the ceremony; fine if refused.
+    $("go").hidden = true;
+    $("banner").hidden = true;
+    $("heard").textContent = "";
+    setHouse(null);
     try { navigator.wakeLock?.request("screen").catch(() => {}); } catch (e) {}
 
     setPhase("speaking");
-    go.textContent = "The hat speaks";
-    await speak(pick(QUESTIONS));
+    const qid = nextQuestion();
+    await say(qid);
 
     setPhase("listening");
-    go.textContent = "Listening";
-    says.textContent = "";
+    $("says").textContent = "";
+    $("listening").hidden = false;
     const answer = await listen();
+    $("listening").hidden = true;
+    lastAnswer = answer;
 
     setPhase("pondering");
-    go.textContent = "Thinking";
-    const forced = forceSel.value;
-    const result = forced ? { house: forced, clue: null } : decide(answer);
-    forceSel.value = "";
+    const forced = $("force").value;
+    const result = decide(answer, qid);
+    if (forced) { result.house = forced; result.clue = null; result.how = "chosen in settings"; }
+    $("force").value = "";
 
-    if (result.clue) await speak(`Ah. ${result.clue}. I see.`);
-    await speak(pick(PONDER));
-    await speak(pick(HOUSES[result.house].lines));
-    await wait(300);
-    await speak(pick(LEAD_IN) + "...", { rate: 0.75 });
-    await wait(500);
+    // Start loading what's needed while the hat ponders.
+    const h = result.house;
+    const lineId = h + (1 + Math.floor(Math.random() * L.houses[h].lines.length));
+    const leadId = "lead" + (1 + Math.floor(Math.random() * L.leadIns.length));
+    const clueId = result.clue ? "clue-" + result.clue.replace(/ /g, "-") : null;
+    [clueId, lineId, leadId, "house-" + h].forEach((id) => id && load(id));
+
+    if (clueId) await say(clueId);
+    await say("ponder" + (1 + Math.floor(Math.random() * L.ponder.length)));
+    await say(lineId);
+    await wait(250);
+    await say(leadId);
+    await wait(400);
 
     setPhase("reveal");
-    setHouseColors(result.house);
-    houseEl.textContent = HOUSES[result.house].name;
-    houseEl.hidden = false;
-    go.textContent = "Sort the next student";
+    setHouse(h);
+    $("crest").textContent = L.houses[h].name[0];
+    $("house").textContent = L.houses[h].name;
+    $("traits").textContent = L.houses[h].traits || "";
+    $("banner").hidden = false;
+    const box = $("hat").getBoundingClientRect();
+    burst(box.left + box.width / 2, box.top + box.height * 0.45, [L.houses[h].c2, L.houses[h].c1, "#fff6dc"]);
     fanfare();
-    await speak(HOUSES[result.house].name.toUpperCase() + "!", { rate: 0.95, pitch: 0.75 });
+    await say("house-" + h, ""); // the banner already shows the name
 
-    tally[result.house] = (tally[result.house] || 0) + 1;
-    saveTally();
-    go.disabled = false;
+    tally[h] = (tally[h] || 0) + 1;
+    store.set("hat-tally", tally); renderTally();
+    const scoreList = ORDER.filter((x) => result.scores[x] > 0).map((x) => `${L.houses[x].name} ${result.scores[x]}`).join(", ");
+    $("why").innerHTML = "";
+    $("why").append(
+      Object.assign(document.createElement("span"), { textContent: `Heard: ${answer ? `“${answer}”` : "nothing"}` }),
+      document.createElement("br"),
+      Object.assign(document.createElement("span"), { textContent: `${L.houses[h].name}, decided by ${result.how}${result.reasons.length && !forced ? ` (${result.reasons.join(", ")})` : ""}.` }),
+      document.createElement("br"),
+      Object.assign(document.createElement("small"), { textContent: scoreList ? `Scores: ${scoreList}` : "No clue words found." })
+    );
+
+    $("go").textContent = "Sort the next student";
+    $("go").hidden = false;
     running = false;
   }
 
-  go.addEventListener("click", () => {
-    // iOS only allows audio to start inside the tap itself, so unlock it here before any await.
-    try {
-      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-      audio.resume();
-    } catch (e) {}
-    if ("speechSynthesis" in window) { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance("")); }
+  function unlockAndSort() {
+    // iOS only lets sound start inside the tap itself, so wake the audio before anything else.
+    if (ctx) {
+      ctx.resume();
+      const s = ctx.createBufferSource(); s.buffer = ctx.createBuffer(1, 1, 22050); s.connect(ctx.destination); s.start();
+    }
     sort();
-  });
+  }
+  $("go").addEventListener("click", unlockAndSort);
+  $("hat").addEventListener("click", unlockAndSort);
 
+  // ---------- settings ----------
+  $("depth").addEventListener("input", (e) => { settings.depth = +e.target.value; store.set("hat-depth", settings.depth); });
+  $("echo").addEventListener("input", (e) => {
+    settings.echo = +e.target.value; store.set("hat-echo", settings.echo);
+    if (fx) fx.wet.gain.value = settings.echo;
+  });
   $("test").addEventListener("click", () => {
-    speechSynthesis.cancel();
-    speak("I am the Sorting Hat. Put me on, and I shall tell you where you ought to be.");
+    if (running) return;
+    if (ctx) ctx.resume();
+    setPhase("speaking");
+    say("test").then(() => { if (!running) { setPhase("idle"); $("says").textContent = "Place the hat on a student's head, then tap."; } });
   });
-
   $("testmic").addEventListener("click", async () => {
-    if (!SR) { $("support").textContent = "This browser can't turn speech into words. The hat will still sort, using its own judgement."; return; }
+    if (running) return;
+    if (!SR) { $("support").textContent = "This browser can't turn speech into words, so the hat can't hear answers. Try Safari."; return; }
     $("support").textContent = "Say something now.";
     const t = await listen(6000);
-    $("support").textContent = t ? `Microphone works. Heard: "${t}"` : "Heard nothing. Check that Safari has microphone access and that Siri & Dictation are turned on.";
+    $("support").textContent = t ? `Microphone works. Heard: “${t}”` : "Heard nothing. Check that Safari has microphone access and that Siri & Dictation are turned on.";
   });
-
   $("reset").addEventListener("click", () => {
     tally = { gryffindor: 0, hufflepuff: 0, ravenclaw: 0, slytherin: 0 };
-    saveTally();
+    store.set("hat-tally", tally); renderTally();
+  });
+  $("reshuffle").addEventListener("click", () => { store.set("hat-deck", []); $("reshuffle").textContent = "Questions reshuffled"; });
+
+  if (!SR) $("support").textContent = "Speech recognition isn't available in this browser, so the hat can't hear answers. Use Safari on iPhone.";
+
+  // ---------- start ----------
+  fetch("lines.json").then((r) => r.json()).then((d) => {
+    L = d;
+    audioIds(d);
+    keyIndex();
+    // Preload everything except the per-word clue lines, which load as needed.
+    Object.keys(TEXT).filter((id) => !id.startsWith("clue-")).forEach(load);
+  }).catch(() => {
+    $("says").textContent = "The hat's lines didn't load. Check the connection and reload the page.";
   });
 
-  if (!SR) $("support").textContent = "Speech recognition isn't available in this browser. The hat will still listen for a few seconds, then sort.";
+  // For quick checks from the console.
+  window.__hat = { decide: (a, qid) => decide(a, qid) };
 })();
 </script>
 </body>
