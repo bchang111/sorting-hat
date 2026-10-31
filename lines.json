@@ -1,33 +1,70 @@
 {
   "voice": "Daniel (Enhanced)",
   "rate": 165,
+  "openers": [
+    "Ah! A new head. [[slnc 300]] Let me have a look inside.",
+    "Hmm. [[slnc 300]] Another head to sort.",
+    "Oh ho! [[slnc 250]] What have we here?",
+    "Hello there, young one. [[slnc 300]] Hold still, now.",
+    "Sit still. [[slnc 300]] This won't take long.",
+    "Mmm. [[slnc 300]] A fresh mind. [[slnc 200]] How exciting.",
+    "Well, well. [[slnc 300]] Let's see what's going on under here.",
+    "Ahem. [[slnc 300]] I'm awake. [[slnc 250]] Let us begin.",
+    "Oh, a lively one. [[slnc 300]] I can tell already.",
+    "Comfortable? [[slnc 400]] Good. [[slnc 250]] Then let's begin.",
+    "Ah. [[slnc 300]] I've been waiting for you.",
+    "Hmm. [[slnc 300]] A little bit of everything in this head. [[slnc 300]] Let me ask you something."
+  ],
   "questions": [
-    "Hmm. Another head to sort. [[slnc 400]] Tell me. Would you rather be brave, clever, kind, or powerful?",
-    "Ah, let me see. [[slnc 400]] If you found a secret door in the castle, what would you do?",
-    "Interesting. [[slnc 300]] Which would you choose as a pet? A lion, an eagle, a badger, or a snake?",
-    "Hmm. [[slnc 400]] If you could have any magical power at all, what would it be?",
-    "Tell me, young one. [[slnc 300]] What do you love to do more than anything else?",
-    "Now then. [[slnc 400]] What do you want people to remember you for?",
-    "Let me think. [[slnc 300]] Which would you take on a quest? A sword, a book, a friend, or a treasure map?",
-    "Ahh. [[slnc 400]] You find a dragon egg in the forest. What do you do with it?",
-    "Hmm. [[slnc 300]] If you were a teacher at a school of magic, what would you teach?",
-    "Tell me this. [[slnc 400]] Your friend is in trouble. What do you do?",
-    "Ah. [[slnc 300]] Which would you rather win? A race, a quiz, a prize for kindness, or a golden crown?",
-    "Hmm. [[slnc 400]] What is the most important thing a wizard should have?",
-    "Let me see. [[slnc 300]] If you could explore anywhere in the whole world, where would you go?",
-    "Oh, a tricky one. [[slnc 400]] Which would you rather have? A flying broom, an invisibility cloak, a magic book, or a basket of treats?"
+    "Would you rather be brave, clever, kind, or powerful?",
+    "If you found a secret door in the castle, what would you do?",
+    "Which would you choose as a pet? A lion, an eagle, a badger, or a snake?",
+    "If you could have any magical power at all, what would it be?",
+    "What do you love to do more than anything else?",
+    "What do you want people to remember you for?",
+    "Which would you take on a quest? A sword, a book, a friend, or a treasure map?",
+    "You find a dragon egg in the forest. What do you do with it?",
+    "If you were a teacher at a school of magic, what would you teach?",
+    "Your friend is in trouble. What do you do?",
+    "Which would you rather win? A race, a quiz, a prize for kindness, or a golden crown?",
+    "What is the most important thing a wizard should have?",
+    "If you could explore anywhere in the whole world, where would you go?",
+    "Which would you rather have? A flying broom, an invisibility cloak, a magic book, or a basket of treats?"
   ],
   "ponder": [
     "Hmm. [[slnc 500]] Difficult. [[slnc 300]] Very difficult.",
     "Oh, I see. [[slnc 300]] Yes, I see quite a lot in here.",
     "Interesting. [[slnc 400]] Very interesting.",
-    "Not a bad mind. [[slnc 300]] Not bad at all."
+    "Not a bad mind. [[slnc 300]] Not bad at all.",
+    "Oh, this is a puzzle. [[slnc 300]] A delightful puzzle.",
+    "I see a spark in here. [[slnc 300]] But where to put it?",
+    "Let me think. [[slnc 500]] Let me think.",
+    "You'd do well in more than one house, [[slnc 200]] you know.",
+    "Hmm. [[slnc 300]] I haven't had a head like this in years.",
+    "Tricky. [[slnc 300]] Very tricky. [[slnc 300]] But I think I know.",
+    "Now, where shall I put you? [[slnc 500]] Hmm.",
+    "Ooh. [[slnc 300]] So much going on in here. [[slnc 300]] Let me sort it out."
   ],
   "leadIns": [
     "Better be. [[slnc 200]]",
     "I know just where to put you. [[slnc 200]]",
     "It had better be. [[slnc 200]]",
-    "You belong in. [[slnc 200]]"
+    "You belong in. [[slnc 200]]",
+    "There's only one place for you. [[slnc 200]]",
+    "I have decided. [[slnc 300]] It's.",
+    "Without a doubt. [[slnc 200]] It's.",
+    "And so it shall be. [[slnc 200]]"
+  ],
+  "asked": [
+    "You know your own mind, [[slnc 200]] don't you? [[slnc 400]] Very well.",
+    "Telling the hat what to do, are we? [[slnc 400]] Ha! [[slnc 200]] I like that.",
+    "Hmm. [[slnc 300]] You've already chosen, haven't you? [[slnc 300]] Then I shall listen.",
+    "Well, if you're sure. [[slnc 400]] And I think you are."
+  ],
+  "reprompt": [
+    "Hmm? [[slnc 300]] Speak up, young one. [[slnc 300]] Don't be shy.",
+    "What was that? [[slnc 300]] Say it a little louder for me.",
+    "I'm a very old hat, [[slnc 200]] and my ears aren't what they were. [[slnc 300]] Tell me again?"
   ],
   "test": "I am the Sorting Hat. [[slnc 300]] Put me on, and I shall tell you where you ought to be.",
   "houses": {
@@ -38,7 +75,9 @@
       "lines": [
         "Plenty of courage, I see.",
         "A daring heart. [[slnc 200]] No doubt about it.",
-        "Bold. [[slnc 200]] Very bold indeed."
+        "Bold. [[slnc 200]] Very bold indeed.",
+        "You'd charge in where others wouldn't dare.",
+        "A lion's heart. [[slnc 200]] I can feel it roaring."
       ],
       "keys": [
         "brave",
@@ -101,7 +140,8 @@
         "hatch it",
         "ride it",
         "never give up"
-      ]
+      ],
+      "not": "Not Gryffindor, eh? [[slnc 400]] Hmm. [[slnc 400]] Very well. [[slnc 300]] I'll find you somewhere else."
     },
     "hufflepuff": {
       "name": "Hufflepuff",
@@ -110,7 +150,9 @@
       "lines": [
         "A kind and loyal heart.",
         "You'd never leave a friend behind, would you?",
-        "Hard working, [[slnc 200]] and true."
+        "Hard working, [[slnc 200]] and true.",
+        "Everyone is lucky to have a friend like you.",
+        "Patient, [[slnc 200]] and fair, [[slnc 200]] and good."
       ],
       "keys": [
         "kind",
@@ -184,7 +226,8 @@
         "make people happy",
         "hard work",
         "basket of treats"
-      ]
+      ],
+      "not": "Not Hufflepuff, eh? [[slnc 400]] Hmm. [[slnc 400]] Very well. [[slnc 300]] I'll find you somewhere else."
     },
     "ravenclaw": {
       "name": "Ravenclaw",
@@ -193,7 +236,9 @@
       "lines": [
         "Oh, there's a clever mind in here.",
         "Such curiosity. [[slnc 200]] Such wit.",
-        "A thirst to learn, I see."
+        "A thirst to learn, I see.",
+        "Always asking why. [[slnc 300]] I like that.",
+        "So many ideas buzzing around in here."
       ],
       "keys": [
         "clever",
@@ -253,7 +298,8 @@
         "ask questions",
         "make things",
         "magic book"
-      ]
+      ],
+      "not": "Not Ravenclaw, eh? [[slnc 400]] Hmm. [[slnc 400]] Very well. [[slnc 300]] I'll find you somewhere else."
     },
     "slytherin": {
       "name": "Slytherin",
@@ -262,7 +308,9 @@
       "lines": [
         "Plenty of ambition, [[slnc 200]] oh yes.",
         "You could be great, you know.",
-        "A cunning one, [[slnc 200]] aren't you?"
+        "A cunning one, [[slnc 200]] aren't you?",
+        "Big plans in this head. [[slnc 300]] Very big plans.",
+        "You know exactly what you want, [[slnc 200]] don't you?"
       ],
       "keys": [
         "power",
@@ -323,7 +371,8 @@
         "be number one",
         "keep it secret",
         "keep it a secret"
-      ]
+      ],
+      "not": "Not Slytherin, eh? [[slnc 400]] Hmm. [[slnc 400]] Very well. [[slnc 300]] I'll find you somewhere else."
     }
   }
 }

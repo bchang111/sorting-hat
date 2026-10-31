@@ -19,13 +19,13 @@ def audio_ids(d):
     ids = {}
     for i, t in enumerate(d["questions"]):
         ids[f"q{i + 1:02d}"] = t
-    for i, t in enumerate(d["ponder"]):
-        ids[f"ponder{i + 1}"] = t
-    for i, t in enumerate(d["leadIns"]):
-        ids[f"lead{i + 1}"] = t
+    for group, prefix in [("openers", "open"), ("ponder", "ponder"), ("leadIns", "lead"), ("asked", "asked"), ("reprompt", "reprompt")]:
+        for i, t in enumerate(d[group]):
+            ids[f"{prefix}{i + 1}"] = t
     ids["test"] = d["test"]
     for key, h in d["houses"].items():
         ids[f"house-{key}"] = h["name"] + "!"
+        ids[f"{key}-not"] = h["not"]
         for i, t in enumerate(h["lines"]):
             ids[f"{key}{i + 1}"] = t
         for k in h["keys"]:

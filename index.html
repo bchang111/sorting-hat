@@ -173,6 +173,8 @@
   .settings label { display: grid; gap: 6px; }
   .settings h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 0.95rem; letter-spacing: 0.1em; color: var(--parchment); }
   input[type="range"] { width: 100%; accent-color: var(--ember); }
+  .settings label.check { display: flex; gap: 10px; align-items: center; color: var(--parchment); cursor: pointer; }
+  .check input { width: 20px; height: 20px; margin: 0; accent-color: var(--ember); }
   select {
     font: inherit; font-size: 16px; color: var(--parchment);
     background: var(--night-2); border: 1px solid var(--dim); border-radius: 8px; padding: 8px; width: 100%;
@@ -287,6 +289,9 @@
       </label>
       <p class="note">A chosen house applies to the next sorting only, then resets.</p>
 
+      <label class="check" for="honor"><input id="honor" type="checkbox" checked> Give kids the house they ask for</label>
+      <p class="note">When a kid names a house ("Gryffindor, please!"), the hat picks it. "Not Slytherin!" rules that house out. Turn this off to have the hat ignore house names.</p>
+
       <div class="row" style="display:grid;gap:6px">
         <h3>Last sorting</h3>
         <p id="why"><small>Nobody sorted yet.</small></p>
@@ -324,15 +329,28 @@
   // Must match audio_ids() in build_audio.py.
   function audioIds(d) {
     d.questions.forEach((t, i) => TEXT["q" + String(i + 1).padStart(2, "0")] = t);
-    d.ponder.forEach((t, i) => TEXT["ponder" + (i + 1)] = t);
-    d.leadIns.forEach((t, i) => TEXT["lead" + (i + 1)] = t);
+    for (const [group, prefix] of [["openers", "open"], ["ponder", "ponder"], ["leadIns", "lead"], ["asked", "asked"], ["reprompt", "reprompt"]]) {
+      d[group].forEach((t, i) => TEXT[prefix + (i + 1)] = t);
+    }
     TEXT.test = d.test;
     for (const [key, h] of Object.entries(d.houses)) {
       TEXT["house-" + key] = h.name + "!";
+      TEXT[key + "-not"] = h.not;
       h.lines.forEach((t, i) => TEXT[key + (i + 1)] = t);
       h.keys.forEach((k) => TEXT["clue-" + k.replace(/ /g, "-")] = `Ah. ${k[0].toUpperCase() + k.slice(1)}. I see.`);
     }
     for (const k in TEXT) TEXT[k] = strip(TEXT[k]);
+    for (const k in TEXT) if (k.startsWith("lead")) TEXT[k] = TEXT[k].replace(/\.$/, "…");
+  }
+
+  // Picks one of a group's lines, skipping the ones used in the last few sortings.
+  function fresh(group, count, prefix) {
+    const all = [...Array(count).keys()];
+    const recent = store.get("hat-recent-" + group, []);
+    const options = all.filter((i) => !recent.includes(i));
+    const i = pick(options.length ? options : all);
+    store.set("hat-recent-" + group, [i, ...recent].slice(0, Math.min(4, Math.floor(count / 2))));
+    return prefix + (i + 1);
   }
 
   // ---------- audio engine ----------
@@ -467,6 +485,9 @@
   }
 
   // ---------- deciding from the answer ----------
+  // Also catches how the phone tends to spell them out: "griffin door", "huffle puff", "raven claw", "slither in".
+  const HOUSE_NAMES = /(gr[iy]f+[iey]n ?d[oa]o?re?s?)|(huf+[aeu]?l+e? ?puf+s?)|(rav[ea]n ?cl[ao]ws?)|(sl[iy]th[ea]r ?[iea]ns?)/g;
+  const HOUSE_NEGATORS = new Set(["not", "don't", "dont", "no", "never", "hate", "except", "nope", "nah", "without"]);
   const NEGATORS = new Set(["not", "don't", "dont", "never", "no", "isn't", "wouldn't", "won't", "can't"]);
   const stem = (w) => (w.length >= 4 ? w.replace(/(ings?|ers?|ed|es|s)$/, "").replace(/e$/, "") : w);
   let KEYSTEMS = null;
@@ -494,6 +515,27 @@
     const clues = { gryffindor: null, hufflepuff: null, ravenclaw: null, slytherin: null };
     let text = " " + answer.toLowerCase().replace(/[^a-z' ]+/g, " ").replace(/\s+/g, " ") + " ";
     text = text.replace(/ (kind|sort) of /g, " ");
+
+    // House names: "Gryffindor please!" asks for a house, "not Slytherin!" rules one out.
+    const asked = [], refused = [];
+    let prevEnd = 0;
+    for (const m of text.matchAll(HOUSE_NAMES)) {
+      const h = m[1] ? "gryffindor" : m[2] ? "hufflepuff" : m[3] ? "ravenclaw" : "slytherin";
+      const lead = text.slice(prevEnd, m.index).trim().split(" ").slice(-5);
+      (lead.some((w) => HOUSE_NEGATORS.has(w)) ? refused : asked).push(h);
+      prevEnd = m.index + m[0].length;
+    }
+    text = text.replace(HOUSE_NAMES, " | "); // so "raven claw" doesn't also count as a raven
+    for (const list of [asked, refused]) list.splice(0, list.length, ...new Set(list));
+    const honor = $("honor").checked;
+    let candidates = ORDER.slice();
+    if (honor) {
+      const left = ORDER.filter((h) => !refused.includes(h));
+      if (left.length) candidates = left;
+      const wanted = candidates.filter((h) => asked.includes(h));
+      if (wanted.length) candidates = wanted;
+    }
+    const askedFor = honor && candidates.length === 1 && asked.includes(candidates[0]);
 
     // Phrases first (worth 2), longest first, removing each so shorter ones don't double count.
     const phrases = ORDER.flatMap((h) => (L.houses[h].phrases || []).map((p) => ({ h, p })))
@@ -530,19 +572,23 @@
       if (count(["i", "me", "my", "mine", "myself", "i'd", "i'll", "i'm"]) >= 3) { scores.slytherin += 0.5; reasons.slytherin.push("thinking of themselves"); }
     }
 
-    const best = Math.max(...ORDER.map((h) => scores[h]));
+    const refusedNote = honor && refused.length ? ` (ruled out ${refused.map((h) => L.houses[h].name).join(" and ")})` : "";
+    if (askedFor) {
+      return { house: candidates[0], clue: null, scores, reasons: [], how: "the kid asking for it", askedFor, refused: honor ? refused : [] };
+    }
+    const best = Math.max(...candidates.map((h) => scores[h]));
     let pool, how;
     if (best > 0) {
-      pool = ORDER.filter((h) => scores[h] === best);
+      pool = candidates.filter((h) => scores[h] === best);
       how = pool.length > 1 ? "a tie, so the house with fewer students won" : "the answer";
     } else {
-      pool = ORDER.slice();
+      pool = candidates;
       how = answer ? "no clues in the answer, so the house with fewer students won" : "nothing was heard, so the house with fewer students won";
     }
     // Ties go to the house with the fewest students so far.
     const fewest = Math.min(...pool.map((h) => tally[h] || 0));
     const house = pick(pool.filter((h) => (tally[h] || 0) === fewest));
-    return { house, clue: clues[house], scores, reasons: reasons[house], how };
+    return { house, clue: clues[house], scores, reasons: reasons[house], how: how + refusedNote, askedFor: false, refused: honor ? refused : [] };
   }
 
   // ---------- question deck: every question once before any repeats ----------
@@ -658,31 +704,48 @@
     try { navigator.wakeLock?.request("screen").catch(() => {}); } catch (e) {}
 
     setPhase("speaking");
+    await say(fresh("openers", L.openers.length, "open"));
+    await wait(250);
     const qid = nextQuestion();
     await say(qid);
 
-    setPhase("listening");
-    $("says").textContent = "";
-    $("listening").hidden = false;
-    const answer = await listen();
-    $("listening").hidden = true;
+    const hear = async () => {
+      setPhase("listening");
+      $("says").textContent = "";
+      $("listening").hidden = false;
+      const heard = await listen();
+      $("listening").hidden = true;
+      return heard;
+    };
+    let answer = await hear();
+    if (!answer && SR) {
+      // Nothing heard: ask once more before deciding.
+      setPhase("speaking");
+      await say(fresh("reprompt", L.reprompt.length, "reprompt"));
+      answer = await hear();
+    }
     lastAnswer = answer;
 
     setPhase("pondering");
     const forced = $("force").value;
     const result = decide(answer, qid);
-    if (forced) { result.house = forced; result.clue = null; result.how = "chosen in settings"; }
+    if (forced) { Object.assign(result, { house: forced, clue: null, how: "chosen in settings", askedFor: false, refused: [] }); }
     $("force").value = "";
 
     // Start loading what's needed while the hat ponders.
     const h = result.house;
-    const lineId = h + (1 + Math.floor(Math.random() * L.houses[h].lines.length));
-    const leadId = "lead" + (1 + Math.floor(Math.random() * L.leadIns.length));
+    const lineId = fresh("lines-" + h, L.houses[h].lines.length, h);
+    const leadId = fresh("leadIns", L.leadIns.length, "lead");
     const clueId = result.clue ? "clue-" + result.clue.replace(/ /g, "-") : null;
     [clueId, lineId, leadId, "house-" + h].forEach((id) => id && load(id));
 
-    if (clueId) await say(clueId);
-    await say("ponder" + (1 + Math.floor(Math.random() * L.ponder.length)));
+    if (result.refused.length) await say(result.refused[0] + "-not");
+    if (result.askedFor) {
+      await say(fresh("asked", L.asked.length, "asked"));
+    } else {
+      if (clueId) await say(clueId);
+      await say(fresh("ponder", L.ponder.length, "ponder"));
+    }
     await say(lineId);
     await wait(250);
     await say(leadId);
@@ -750,6 +813,8 @@
     tally = { gryffindor: 0, hufflepuff: 0, ravenclaw: 0, slytherin: 0 };
     store.set("hat-tally", tally); renderTally();
   });
+  $("honor").checked = store.get("hat-honor", true);
+  $("honor").addEventListener("change", (e) => store.set("hat-honor", e.target.checked));
   $("reshuffle").addEventListener("click", () => { store.set("hat-deck", []); $("reshuffle").textContent = "Questions reshuffled"; });
 
   if (!SR) $("support").textContent = "Speech recognition isn't available in this browser, so the hat can't hear answers. Use Safari on iPhone.";
@@ -766,7 +831,7 @@
   });
 
   // For quick checks from the console.
-  window.__hat = { decide: (a, qid) => decide(a, qid) };
+  window.__hat = { decide: (a, qid) => decide(a, qid), ids: () => Object.keys(TEXT) };
 })();
 </script>
 </body>
