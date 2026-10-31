@@ -413,8 +413,9 @@
       let done = false;
       const finish = () => { if (done) return; done = true; resolve(); };
       src.onended = finish;
-      setTimeout(finish, (buf.duration / settings.depth) * 1000 + 800);
-      src.start();
+      setTimeout(finish, (buf.duration / settings.depth) * 1000 + 900);
+      // A short lead-in so the first syllable isn't lost if the output is still waking up.
+      src.start(ctx.currentTime + 0.08);
     });
   }
 
@@ -455,15 +456,25 @@
   function listen(maxMs = 10000) {
     $("heard").textContent = "";
     return new Promise((resolve) => {
-      let text = "", finished = false, rec = null, silence = null;
+      let text = "", finished = false, rec = null, silence = null, ended = false;
       const hardStop = setTimeout(finish, maxMs);
       function finish() {
         if (finished) return;
         finished = true;
         clearTimeout(hardStop); clearTimeout(silence);
         $("done").hidden = true; $("done").onclick = null;
-        try { rec && rec.abort(); } catch (e) {}
-        resolve(text.trim());
+        const answer = text.trim();
+        if (!rec) { resolve(answer); return; }
+        // Turning the mic off makes the phone switch its audio from recording back to playback,
+        // and plays the dictation "done" tone. Anything the hat says during that switch comes out
+        // clipped or quiet, so wait until the mic has really let go, plus a little more.
+        let released = false;
+        const settle = () => { if (released) return; released = true; setTimeout(() => resolve(answer), 700); };
+        rec.onresult = null;
+        if (ended) { settle(); return; }
+        rec.onend = settle; rec.onerror = settle;
+        setTimeout(settle, 1200);
+        try { rec.abort(); } catch (e) { settle(); }
       }
       $("done").hidden = false;
       $("done").onclick = finish;
@@ -479,7 +490,7 @@
         silence = setTimeout(finish, 1800); // they've stopped talking
       };
       rec.onerror = () => {};
-      rec.onend = () => { if (text) finish(); };
+      rec.onend = () => { ended = true; if (text) finish(); };
       try { rec.start(); } catch (e) {}
     });
   }
@@ -824,8 +835,11 @@
     L = d;
     audioIds(d);
     keyIndex();
-    // Preload everything except the per-word clue lines, which load as needed.
-    Object.keys(TEXT).filter((id) => !id.startsWith("clue-")).forEach(load);
+    // Preload the main lines first, then the per-word clue lines in the background,
+    // so "Ah. Brave. I see." doesn't wait on a download right after the answer.
+    const ids = Object.keys(TEXT);
+    Promise.all(ids.filter((id) => !id.startsWith("clue-")).map(load))
+      .then(() => ids.filter((id) => id.startsWith("clue-")).forEach(load));
   }).catch(() => {
     $("says").textContent = "The hat's lines didn't load. Check the connection and reload the page.";
   });
