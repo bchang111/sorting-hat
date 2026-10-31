@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#120f17">
+<title>The Sorting Hat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&display=swap">
+<style>
+  /* Layout: one candlelit screen; a single big control in the middle, settings tucked below. */
+  :root {
+    --night: #120f17;
+    --night-2: #1d1823;
+    --parchment: #ecdfc3;
+    --dim: #9a8e78;
+    --candle: #e3a547;
+    --candle-glow: rgba(227, 165, 71, 0.35);
+    --house-1: #3a2f22;
+    --house-2: #e3a547;
+    --display: "IM Fell English SC", Georgia, "Times New Roman", serif;
+    --body: "IM Fell English", Georgia, "Times New Roman", serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--night);
+    background-image: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--house-1) 55%, transparent), transparent 70%);
+    color: var(--parchment);
+    font-family: var(--body);
+    font-size: 18px;
+    line-height: 1.45;
+    transition: background-color 1.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  main {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding-top: max(28px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(28px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    text-align: center;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    margin: 0;
+    color: var(--candle);
+    text-wrap: balance;
+  }
+  .stage {
+    flex: 1;
+    width: 100%;
+    max-width: 30rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+  }
+  .hint { color: var(--dim); margin: 0; font-style: italic; max-width: 22rem; }
+
+  #go {
+    width: min(68vw, 260px);
+    aspect-ratio: 1;
+    max-width: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--candle);
+    background: radial-gradient(circle at 50% 40%, var(--night-2), var(--night));
+    color: var(--parchment);
+    font-family: var(--display);
+    font-size: 1.6rem;
+    line-height: 1.15;
+    padding: 24px;
+    cursor: pointer;
+    box-shadow: 0 0 40px var(--candle-glow), inset 0 0 30px rgba(0,0,0,0.6);
+    transition: transform 0.15s ease, box-shadow 0.3s ease, border-color 0.6s ease;
+  }
+  #go:active { transform: scale(0.97); }
+  #go:focus-visible { outline: 3px solid var(--parchment); outline-offset: 6px; }
+  #go:disabled { cursor: default; }
+  body[data-phase="speaking"] #go,
+  body[data-phase="pondering"] #go { animation: breathe 2.2s ease-in-out infinite; }
+  body[data-phase="listening"] #go { animation: listen 1.1s ease-in-out infinite; border-color: var(--parchment); }
+  body[data-phase="reveal"] #go { border-color: var(--house-2); box-shadow: 0 0 70px color-mix(in srgb, var(--house-2) 60%, transparent); }
+  @keyframes breathe { 50% { box-shadow: 0 0 70px var(--candle-glow), inset 0 0 30px rgba(0,0,0,0.6); transform: scale(1.02); } }
+  @keyframes listen { 50% { box-shadow: 0 0 80px rgba(236, 223, 195, 0.35), inset 0 0 30px rgba(0,0,0,0.6); } }
+
+  #says {
+    min-height: 3em;
+    margin: 0;
+    font-size: 1.25rem;
+    font-style: italic;
+    text-wrap: balance;
+  }
+  #heard { min-height: 1.5em; margin: 0; color: var(--dim); }
+  #heard:not(:empty)::before { content: "Heard: "; font-style: italic; }
+
+  #house {
+    font-family: var(--display);
+    font-size: clamp(2.6rem, 13vw, 4.4rem);
+    line-height: 1;
+    margin: 0;
+    color: var(--house-2);
+    text-shadow: 0 0 30px color-mix(in srgb, var(--house-2) 50%, transparent);
+    animation: rise 0.9s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes rise { from { opacity: 0; transform: scale(0.6) translateY(20px); } }
+
+  .btn {
+    font: inherit;
+    font-size: 1rem;
+    color: var(--parchment);
+    background: var(--night-2);
+    border: 1px solid var(--dim);
+    border-radius: 999px;
+    padding: 10px 22px;
+    cursor: pointer;
+  }
+  .btn:focus-visible { outline: 2px solid var(--candle); outline-offset: 3px; }
+
+  details {
+    width: 100%;
+    max-width: 30rem;
+    text-align: left;
+    color: var(--dim);
+    font-size: 0.95rem;
+  }
+  summary { cursor: pointer; text-align: center; letter-spacing: 0.06em; font-family: var(--display); }
+  .settings { display: grid; gap: 14px; padding-top: 14px; }
+  .settings label { display: grid; gap: 4px; }
+  select {
+    font: inherit;
+    font-size: 16px;
+    color: var(--parchment);
+    background: var(--night-2);
+    border: 1px solid var(--dim);
+    border-radius: 8px;
+    padding: 8px;
+    width: 100%;
+  }
+  .tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; font-variant-numeric: tabular-nums; }
+  .tally div { display: grid; gap: 2px; }
+  .tally b { font-size: 1.3rem; color: var(--parchment); font-weight: 400; }
+  .tally span { font-size: 0.72rem; letter-spacing: 0.04em; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .note { font-style: italic; margin: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body data-phase="idle">
+<main>
+  <h1>The Sorting Hat</h1>
+
+  <section class="stage" aria-live="polite">
+    <p class="hint" id="hint">Place the hat on the student's head, then tap.</p>
+    <button id="go" type="button">Begin the Sorting</button>
+    <p id="says"></p>
+    <p id="house" hidden></p>
+    <p id="heard"></p>
+    <button id="done" class="btn" type="button" hidden>They've answered</button>
+  </section>
+
+  <details>
+    <summary>Hat settings</summary>
+    <div class="settings">
+      <label for="voice">Hat's voice
+        <select id="voice"></select>
+      </label>
+      <div class="row">
+        <button id="test" class="btn" type="button">Test voice</button>
+        <button id="testmic" class="btn" type="button">Test microphone</button>
+      </div>
+      <label for="force">Next student's house
+        <select id="force">
+          <option value="">Let the hat decide</option>
+          <option value="gryffindor">Gryffindor</option>
+          <option value="hufflepuff">Hufflepuff</option>
+          <option value="ravenclaw">Ravenclaw</option>
+          <option value="slytherin">Slytherin</option>
+        </select>
+      </label>
+      <p class="note">A chosen house applies to the next sorting only, then resets.</p>
+      <div>
+        <p class="note" style="margin-bottom:8px">Sorted so far</p>
+        <div class="tally" id="tally"></div>
+      </div>
+      <div class="row"><button id="reset" class="btn" type="button">Reset count</button></div>
+      <p class="note" id="support"></p>
+    </div>
+  </details>
+</main>
+
+<script>
+(() => {
+  const HOUSES = {
+    gryffindor: {
+      name: "Gryffindor", c1: "#7a1a17", c2: "#f0b43a",
+      lines: ["Plenty of courage, I see.", "A daring heart. No doubt about it.", "Bold. Very bold indeed."],
+      keys: ["brave", "courage", "bold", "fight", "adventur", "explor", "open", "jump", "climb", "dragon", "lion", "sword", "hero", "rescue", "save", "dare", "fearless", "fly", "flying", "fire", "red", "strong", "fast", "race", "run", "danger", "quidditch", "broom", "battle", "knight", "protect"]
+    },
+    hufflepuff: {
+      name: "Hufflepuff", c1: "#6b5410", c2: "#f5d23d",
+      lines: ["A kind and loyal heart.", "You'd never leave a friend behind, would you?", "Hard working, and true."],
+      keys: ["kind", "nice", "friend", "help", "loyal", "fair", "share", "hug", "badger", "garden", "plant", "flower", "cook", "bake", "cake", "cookie", "food", "animal", "pet", "dog", "cat", "puppy", "family", "together", "care", "happy", "yellow", "honest", "everyone", "love", "heal", "team"]
+    },
+    ravenclaw: {
+      name: "Ravenclaw", c1: "#14305e", c2: "#c9965a",
+      lines: ["Oh, there's a clever mind in here.", "Such curiosity. Such wit.", "A thirst to learn, I see."],
+      keys: ["clever", "smart", "read", "book", "learn", "study", "think", "wise", "puzzle", "eagle", "raven", "bird", "owl", "science", "math", "invent", "question", "curious", "library", "know", "blue", "idea", "figure", "explain", "school", "teacher", "spell", "potion", "brain", "draw", "art", "build", "discover", "secret passage"]
+    },
+    slytherin: {
+      name: "Slytherin", c1: "#0f4a2a", c2: "#c8ccd2",
+      lines: ["Plenty of ambition, oh yes.", "You'd do well to be great.", "A cunning one, aren't you?"],
+      keys: ["power", "win", "winner", "lead", "leader", "rule", "rich", "money", "gold", "ambitio", "best", "famous", "cunning", "sneak", "secret", "snake", "serpent", "green", "king", "queen", "boss", "control", "invisib", "trick", "first", "great", "treasure", "champion", "mine", "keep it", "dark"]
+    }
+  };
+  const ORDER = ["gryffindor", "hufflepuff", "ravenclaw", "slytherin"];
+
+  const QUESTIONS = [
+    "Hmm. Another head to sort. Tell me, would you rather be brave, clever, kind, or powerful?",
+    "Ah, let me see. If you found a secret door in the castle, what would you do?",
+    "Interesting. Which would you choose as a pet: a lion, an eagle, a badger, or a snake?",
+    "Hmm. If you could have any magical power at all, what would it be?",
+    "Tell me, young one. What do you love to do more than anything else?",
+    "Now then. What do you want people to remember you for?",
+    "Let me think. Which would you take on a quest: a sword, a book, a friend, or a treasure map?"
+  ];
+  const PONDER = [
+    "Hmm. Difficult. Very difficult.",
+    "Oh, I see. Yes, I see quite a lot in here.",
+    "Interesting. Very interesting.",
+    "Not a bad mind. Not bad at all."
+  ];
+  const LEAD_IN = ["Better be", "I know just where to put you.", "It had better be", "You belong in"];
+
+  const $ = (id) => document.getElementById(id);
+  const go = $("go"), says = $("says"), heard = $("heard"), houseEl = $("house"), hint = $("hint"), doneBtn = $("done");
+  const voiceSel = $("voice"), forceSel = $("force");
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // ---- tally (per-device convenience) ----
+  let tally = { gryffindor: 0, hufflepuff: 0, ravenclaw: 0, slytherin: 0 };
+  try { Object.assign(tally, JSON.parse(localStorage.getItem("hat-tally") || "{}")); } catch (e) {}
+  function saveTally() { try { localStorage.setItem("hat-tally", JSON.stringify(tally)); } catch (e) {} renderTally(); }
+  function renderTally() {
+    $("tally").innerHTML = ORDER.map((h) => `<div><b>${tally[h] || 0}</b><span>${HOUSES[h].name}</span></div>`).join("");
+  }
+  renderTally();
+
+  // ---- voice ----
+  let voices = [];
+  let voice = null;
+  function loadVoices() {
+    voices = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.startsWith("en"));
+    if (!voices.length) return;
+    let saved = null;
+    try { saved = localStorage.getItem("hat-voice"); } catch (e) {}
+    const preferred = ["Daniel", "Arthur", "Oliver", "Google UK English Male", "Fred", "Rocko", "Grandpa", "Gordon", "Aaron"];
+    voice = voices.find((v) => v.name === saved)
+      || preferred.map((n) => voices.find((v) => v.name.startsWith(n))).find(Boolean)
+      || voices.find((v) => v.lang === "en-GB")
+      || voices[0];
+    voiceSel.innerHTML = voices.map((v, i) => `<option value="${i}">${v.name} (${v.lang})</option>`).join("");
+    voiceSel.value = String(voices.indexOf(voice));
+  }
+  if ("speechSynthesis" in window) {
+    loadVoices();
+    speechSynthesis.addEventListener?.("voiceschanged", loadVoices);
+  }
+  voiceSel.addEventListener("change", () => {
+    voice = voices[+voiceSel.value] || null;
+    try { localStorage.setItem("hat-voice", voice ? voice.name : ""); } catch (e) {}
+  });
+
+  function speak(text, { rate = 0.85, pitch = 0.55, volume = 1 } = {}) {
+    says.textContent = text;
+    return new Promise((resolve) => {
+      if (!("speechSynthesis" in window)) { setTimeout(resolve, 1200 + text.length * 60); return; }
+      const u = new SpeechSynthesisUtterance(text);
+      if (voice) { u.voice = voice; u.lang = voice.lang; } else { u.lang = "en-GB"; }
+      u.rate = rate; u.pitch = pitch; u.volume = volume;
+      let finished = false;
+      // iOS sometimes never fires onend; fall back to an estimate.
+      const timer = setTimeout(() => finish(), 2500 + text.length * 110);
+      function finish() { if (finished) return; finished = true; clearTimeout(timer); resolve(); }
+      u.onend = finish;
+      u.onerror = finish;
+      speechSynthesis.speak(u);
+    });
+  }
+
+  // ---- fanfare ----
+  let audio = null;
+  function fanfare() {
+    if (!audio) return;
+    const now = audio.currentTime;
+    [[0, 392], [0.16, 523.25], [0.32, 659.25], [0.48, 783.99], [0.48, 523.25], [0.48, 659.25]].forEach(([t, f]) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = "triangle"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, now + t);
+      g.gain.exponentialRampToValueAtTime(0.25, now + t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + t + (t >= 0.48 ? 1.4 : 0.3));
+      o.connect(g).connect(audio.destination);
+      o.start(now + t); o.stop(now + t + 1.5);
+    });
+  }
+
+  // ---- listening ----
+  function listen(maxMs = 9000) {
+    heard.textContent = "";
+    return new Promise((resolve) => {
+      let text = "", finished = false, rec = null, silence = null;
+      const hardStop = setTimeout(finish, maxMs);
+      function finish() {
+        if (finished) return;
+        finished = true;
+        clearTimeout(hardStop); clearTimeout(silence);
+        doneBtn.hidden = true; doneBtn.onclick = null;
+        try { rec && rec.stop(); } catch (e) {}
+        resolve(text.trim());
+      }
+      doneBtn.hidden = false;
+      doneBtn.onclick = finish;
+      if (!SR) return; // no recognition: wait for the tap or the timer
+      rec = new SR();
+      rec.lang = "en-US";
+      rec.interimResults = true;
+      rec.continuous = true;
+      rec.onresult = (e) => {
+        text = Array.from(e.results).map((r) => r[0].transcript).join(" ");
+        heard.textContent = text;
+        clearTimeout(silence);
+        silence = setTimeout(finish, 1800); // they've stopped talking
+      };
+      rec.onerror = () => {};
+      rec.onend = () => { if (text) finish(); };
+      try { rec.start(); } catch (e) {}
+    });
+  }
+
+  // ---- deciding ----
+  function decide(answer) {
+    const words = (answer.toLowerCase().match(/[a-z']+/g) || []);
+    const joined = " " + words.join(" ") + " ";
+    const scores = {}, matched = {};
+    for (const h of ORDER) {
+      scores[h] = 0;
+      for (const k of HOUSES[h].keys) {
+        const hit = k.includes(" ")
+          ? joined.includes(" " + k)
+          : words.find((w) => w === k || (k.length >= 4 && w.startsWith(k)));
+        if (hit) { scores[h]++; matched[h] = matched[h] || (typeof hit === "string" ? hit : k); }
+      }
+    }
+    const best = Math.max(...ORDER.map((h) => scores[h]));
+    let pool;
+    if (best > 0) {
+      pool = ORDER.filter((h) => scores[h] === best);
+    } else {
+      // No clues: favour the houses with the fewest students so far.
+      const fewest = Math.min(...ORDER.map((h) => tally[h] || 0));
+      pool = ORDER.filter((h) => (tally[h] || 0) === fewest);
+    }
+    const house = pick(pool);
+    return { house, clue: best > 0 ? matched[house] : null };
+  }
+
+  // ---- the ceremony ----
+  function setPhase(p) { document.body.dataset.phase = p; }
+  function setHouseColors(h) {
+    const root = document.documentElement.style;
+    if (!h) { root.removeProperty("--house-1"); root.removeProperty("--house-2"); return; }
+    root.setProperty("--house-1", HOUSES[h].c1);
+    root.setProperty("--house-2", HOUSES[h].c2);
+  }
+
+  let running = false;
+  async function sort() {
+    if (running) return;
+    running = true;
+    go.disabled = true;
+    hint.hidden = true;
+    houseEl.hidden = true;
+    heard.textContent = "";
+    setHouseColors(null);
+
+    // Keep the screen awake for the ceremony; fine if refused.
+    try { navigator.wakeLock?.request("screen").catch(() => {}); } catch (e) {}
+
+    setPhase("speaking");
+    go.textContent = "The hat speaks";
+    await speak(pick(QUESTIONS));
+
+    setPhase("listening");
+    go.textContent = "Listening";
+    says.textContent = "";
+    const answer = await listen();
+
+    setPhase("pondering");
+    go.textContent = "Thinking";
+    const forced = forceSel.value;
+    const result = forced ? { house: forced, clue: null } : decide(answer);
+    forceSel.value = "";
+
+    if (result.clue) await speak(`Ah. ${result.clue}. I see.`);
+    await speak(pick(PONDER));
+    await speak(pick(HOUSES[result.house].lines));
+    await wait(300);
+    await speak(pick(LEAD_IN) + "...", { rate: 0.75 });
+    await wait(500);
+
+    setPhase("reveal");
+    setHouseColors(result.house);
+    houseEl.textContent = HOUSES[result.house].name;
+    houseEl.hidden = false;
+    go.textContent = "Sort the next student";
+    fanfare();
+    await speak(HOUSES[result.house].name.toUpperCase() + "!", { rate: 0.95, pitch: 0.75 });
+
+    tally[result.house] = (tally[result.house] || 0) + 1;
+    saveTally();
+    go.disabled = false;
+    running = false;
+  }
+
+  go.addEventListener("click", () => {
+    // iOS only allows audio to start inside the tap itself, so unlock it here before any await.
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      audio.resume();
+    } catch (e) {}
+    if ("speechSynthesis" in window) { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance("")); }
+    sort();
+  });
+
+  $("test").addEventListener("click", () => {
+    speechSynthesis.cancel();
+    speak("I am the Sorting Hat. Put me on, and I shall tell you where you ought to be.");
+  });
+
+  $("testmic").addEventListener("click", async () => {
+    if (!SR) { $("support").textContent = "This browser can't turn speech into words. The hat will still sort, using its own judgement."; return; }
+    $("support").textContent = "Say something now.";
+    const t = await listen(6000);
+    $("support").textContent = t ? `Microphone works. Heard: "${t}"` : "Heard nothing. Check that Safari has microphone access and that Siri & Dictation are turned on.";
+  });
+
+  $("reset").addEventListener("click", () => {
+    tally = { gryffindor: 0, hufflepuff: 0, ravenclaw: 0, slytherin: 0 };
+    saveTally();
+  });
+
+  if (!SR) $("support").textContent = "Speech recognition isn't available in this browser. The hat will still listen for a few seconds, then sort.";
+})();
+</script>
+</body>
+</html>
